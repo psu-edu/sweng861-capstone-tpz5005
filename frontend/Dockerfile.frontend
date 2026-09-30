@@ -1,0 +1,21 @@
+ARG NODE_VERSION=24.19.0-alpine
+
+FROM node:${NODE_VERSION} AS builder
+
+#define a working directory
+WORKDIR /app
+
+# copy node.js' dependencies and build them
+COPY package*.json ./
+
+# From the old build script
+RUN npm install ci
+
+COPY . . 
+
+# Again, from the old build script
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "3000"]
