@@ -70,6 +70,9 @@ web_modules/
 .env.*
 !.env.example
 
+# https key and cert
+*.pem
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
