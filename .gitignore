@@ -73,6 +73,9 @@ web_modules/
 # https key and cert
 *.pem
 
+# ignore backend venv
+/backend/.venv/
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
