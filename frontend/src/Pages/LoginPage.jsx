@@ -141,7 +141,7 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                                    Placeholder = {('abc1234@psu.edu')}
+                                    placeholder = {('abc1234@psu.edu')}
                                     title= {('Valid test email: psu1855@psu.edu')}
                                 />
                                 {/* Inline Error */}
@@ -156,7 +156,7 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                                    Placeholder = {('Passwords are case sensitive')}
+                                    placeholder = {('Passwords are case sensitive')}
                                     title= {('Valid test password: PennState1855')}
                                 />
                                 {/* Inline Error */}
