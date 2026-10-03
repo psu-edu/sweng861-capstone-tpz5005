@@ -3,24 +3,350 @@ import {useEffect, useState} from 'react';
 import { styles } from '../styles';
 import { apiClient } from '../apiClient';
 
+import { AppBar, Toolbar, Typography, Drawer, Box, TextField,Button, Table, TableBody, TableCell, TableContainer,
+         TableHead, TableRow, Paper, Chip, Select, MenuItem, FormControl, InputLabel, Dialog, DialogTitle,
+         DialogContent, DialogActions, Snackbar, Alert, List, ListItemButton, ListItemIcon, ListItemText
+} from '@mui/material';
+
+import { MenuBook, Laptop, CalendarMonth, Search } from '@mui/icons-material';
+
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+
+const drawerWidth = 220;
+
+const sampleBooks = [
+    { id: 1, title: 'The Hobbit', genre: 'Fantasy', copies: 3, available_copies: 2 },
+    { id: 2, title: '1984', genre: 'Dystopian', copies: 3, available_copies: 0 },
+    { id: 3, title: 'Dune', genre: 'Science Fiction', copies: 4, available_copies: 2 },
+    { id: 4, title: 'The Great Gatsby', genre: 'Classic', copies: 3, available_copies: 3 },
+    { id: 5, title: 'Fahrenheit 451', genre: 'Dystopian', copies: 2, available_copies: 1 },
+];
+
 /***********************************************/
-export default function LibraryPage({user, setUser}) {
+export default function LibraryPage({ user, 
+                                      setUser, 
+                                      reservationInfo, 
+                                      setReservationInfo}) {
 /***********************************************/
     //User login data
     const [userData, setUserData] = useState(null);
+    const [books, setBooks] = useState([]);
+    const [search, setSearch] = useState('');
+    const [genre, setGenre] = useState('All');
+    const [selectedBook, setSelectedBook] = useState(null);
+    const [reserveStart, setReserveStart] = useState(dayjs().add(1, 'hour'));
+    const [reserveEnd, setReserveEnd] = useState(dayjs().add(3, 'hour'));
+    const [notification, setNotification] = useState('');
+
+    const genres = ['All', ...new Set(books.map(book => book.genre))];
 
     // Initiate user login
     //------------------------------------------/
     useEffect(() => { 
     //------------------------------------------/
-        console.log("Hello World!");
-    }, []);
+        // If there is no user, do not alloow them to acess library
+        if(!user) return;
+
+        const fetchLibraryBooks = async () => {
+            try {
+                //Get the books from the databse
+                const response = await apiClient('/api/psu/bookstore/books', {
+                    method: 'GET'
+                });
+                
+                //Set them into the Library Page
+                setBooks(response.available_books);
+
+            } catch (error) {
+                console.error('Error fetching books:', error);
+            }   
+        }
+
+        fetchLibraryBooks();
+    }, [user]);
+
+    
+    //------------------------------------------/
+    const filteredBooks = books.filter(book => {
+    //------------------------------------------/
+        const matchesSearch = book.title.toLowerCase().includes(search.toLowerCase());
+        const matchesGenre = genre === 'All' || book.genre === genre;
+        return matchesSearch && matchesGenre;
+    });
+
+
+    //------------------------------------------/
+    const handleReserve = async (evnt) => {
+    //------------------------------------------/
+        // In order to reserve a book we must have all 3
+        if (!selectedBook || !reserveStart || !reserveEnd) return;
+
+        // Validate the time window requested
+        if (!reserveStart.isValid() || !reserveEnd.isValid() ||
+            !reserveEnd.isAfter(reserveStart)) {
+            setNotification('Please select a valid reservation window.');
+            return;
+        }
+
+        // Collect all the information we need to make a reservation
+        const payload = {
+            book_id: selectedBook.id,
+            reservation_id: user.user,
+            reserve_Start: reserveStart.toISOString(),
+            reserve_End: reserveEnd.toISOString()
+        };
+
+        try {
+            // Request the reservation from the backend
+            const data = await apiClient(`/api/psu/bookstore/reserve`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            console.log("data", data);
+
+            // If the reservation was successful, add the reservation to the list of 
+            // all reservations the student has made
+            if(data.status === "success") {
+                // Collect all the releveant information
+                const newReservation = { "book_title": selectedBook.title,
+                                         "reserve_start": reserveStart.toISOString(),
+                                         "reserve_end": reserveEnd.toISOString() };
+                
+                // Kick it up to the App.jsx , so we can pass it to the checkout page
+                setReservationInfo( prevReservations => [
+                    ...prevReservations,
+                    newReservation
+                ]);
+            }
+
+            // Update the UI with the new list of books
+            setBooks(data.updated_available_books);
+
+
+        } catch (error) {
+            console.error('Failed to read item:', error);
+            setErrorMsg(error.message);
+        }
+
+        // console.log("user:", user.user);
+        // console.log("Reserving book:", selectedBook);
+        // console.log("Reserve Start:", reserveStart);
+        // console.log("Reserve End:", reserveEnd);
+
+        // Demo only: this does not yet create a database reservation.
+        setNotification(`Reservation request for ${selectedBook.title} is ready.`);
+        setSelectedBook(null);
+    };
 
     /////////////////////////////////////////////////////////////////
 
     return (
-        <div style = {{  padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-            <h1 style = {styles.heading}> {'PSU Library'} </h1>
-        </div>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box sx={{ display: 'flex', minHeight: '80vh' }}>
+                {/* Main content */}
+                <Box component="main" sx={{ flexGrow: 1, p: 3, mt: '64px', minWidth: 0 }}>
+                    <Typography variant="h4" sx={{ mb: 1 }}>
+                        Book Catalog
+                    </Typography>
+
+                    <Typography color="text.secondary" sx={{ mb: 3 }}>
+                        Browse available books and reserve a copy.
+                    </Typography>
+
+                    {/* Filter Elements */}
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                    <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                        {/* Book Search */}
+                        {/*-----------------------------------------------------------*/}
+                        <TextField
+                            label="Search books"
+                            placeholder="Enter a title..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            size="small"
+                            sx={{ flexGrow: 1, minWidth: 180 }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: <Search sx={{ mr: 1, color: 'action.active' }} />
+                                }
+                            }}
+                        /> 
+                        {/*-----------------------------------------------------------*/}
+
+
+                        {/* Genre Filter */}
+                        {/*-----------------------------------------------------------*/}
+                        <FormControl size="small" sx={{ minWidth: 160 }}>
+                            <InputLabel>Genre</InputLabel>
+                            <Select
+                                value={genre}
+                                label="Genre"
+                                onChange={e => setGenre(e.target.value)}
+                            >
+                                {genres.map(g => (
+                                    <MenuItem key={g} value={g}>{g}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        {/*-----------------------------------------------------------*/}
+                    </Box>
+
+
+                    {/* Book Inventory Area */}
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                    <TableContainer component={Paper} variant="outlined">
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                        <Table>
+                            {/* Table Headers */}
+                            {/*-------------------------------------------------------*/}
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Title</TableCell>
+                                    <TableCell>Genre</TableCell>
+                                    <TableCell align="center">Total Copies</TableCell>
+                                    <TableCell align="center">Available</TableCell>
+                                    <TableCell align="right">Action</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            {/*-------------------------------------------------------*/}
+                            
+
+                            {/* Table Rows */}
+                            {/*-------------------------------------------------------*/}
+                            <TableBody>
+                                {filteredBooks.map(book => (
+                                    <TableRow key={book.id} hover>
+                                        <TableCell>{book.title}</TableCell>
+                                        <TableCell>{book.genre}</TableCell>
+                                        <TableCell align="center">{book.copies}</TableCell>
+                                        <TableCell align="center">
+                                            <Chip
+                                                label={book.available_copies > 0
+                                                    ? `${book.available_copies} available`
+                                                    : 'Unavailable'}
+                                                color={book.available_copies > 0
+                                                    ? 'success' : 'default'}
+                                                size="small"
+                                            />
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                disabled={book.available_copies < 1}
+                                                onClick={() => {
+                                                    setSelectedBook(book);
+                                                    setReserveStart(dayjs().add(1, 'hour'));
+                                                    setReserveEnd(dayjs().add(3, 'hour'));
+                                                }}
+                                            >
+                                                Reserve
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {filteredBooks.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center">
+                                            No books found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                            {/*-------------------------------------------------------*/}
+                        </Table>
+                    </TableContainer>
+
+
+                    {/* Reservation dialog */}
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                    <Dialog
+                        open={Boolean(selectedBook)}
+                        onClose={() => setSelectedBook(null)}
+                        fullWidth
+                        maxWidth="sm"
+                    >
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                        <DialogTitle>
+                            Reserve {selectedBook?.title}
+                        </DialogTitle>
+                        <DialogContent>
+                            <Typography sx={{ mb: 2 }} color="text.secondary">
+                                Select the start and end of your reservation.
+                            </Typography>
+
+                            {/* Start Time */}
+                            {/*-------------------------------------------------------*/}
+                            <DateTimePicker
+                                label="Reservation start"
+                                value={reserveStart}
+                                onChange={setReserveStart}
+                                disablePast
+                                sx={{ width: '100%', mb: 2, mt: 1 }}
+                            />
+                            {/*-------------------------------------------------------*/}
+
+
+                            {/* End Time */}
+                            {/*-------------------------------------------------------*/}
+                            <DateTimePicker
+                                label="Reservation end"
+                                value={reserveEnd}
+                                onChange={setReserveEnd}
+                                minDateTime={reserveStart || dayjs()}
+                                sx={{ width: '100%' }}
+                            />
+                            {/*-------------------------------------------------------*/}
+                        </DialogContent>
+                        <DialogActions>
+
+                            {/* Cancel Button */}
+                            {/*-------------------------------------------------------*/}
+                            <Button onClick={() => setSelectedBook(null)}>
+                                Cancel
+                            </Button>
+                            {/*-------------------------------------------------------*/}
+
+
+                            {/* Confirm Button */}
+                            {/*-------------------------------------------------------*/}
+                            <Button
+                                variant="contained"
+                                onClick={handleReserve}
+                                disabled={
+                                    !reserveStart || !reserveEnd ||
+                                    !reserveEnd.isAfter(reserveStart)
+                                }
+                            >
+                                Confirm Reservation
+                            </Button>
+                            {/*-------------------------------------------------------*/}
+                        </DialogActions>
+                    </Dialog>
+                    
+                    {/* Reservation Notification */}
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                    <Snackbar
+                        open={Boolean(notification)}
+                        autoHideDuration={4000}
+                        onClose={() => setNotification('')}
+                    >
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                        <Alert
+                            severity="info"
+                            onClose={() => setNotification('')}
+                        >
+                            {notification}
+                        </Alert>
+                    </Snackbar>
+                    
+                </Box>
+            </Box>
+        </LocalizationProvider>
     );
 }
