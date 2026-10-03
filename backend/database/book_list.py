@@ -4,7 +4,7 @@ books = [
     (3, "The Two Towers", "Fantasy", 2),
     (4, "The Return of the King", "Fantasy", 2),
     (5, "Harry Potter and the Sorcerer's Stone", "Fantasy", 4),
-
+    
     (6, "1984", "Dystopian", 3),
     (7, "Brave New World", "Dystopian", 2),
     (8, "Fahrenheit 451", "Dystopian", 3),
