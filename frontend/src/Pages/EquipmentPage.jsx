@@ -17,14 +17,6 @@ import dayjs from 'dayjs';
 
 const drawerWidth = 220;
 
-const sampleEquipment = [
-    { id: 1, name: 'Laptop', type: 'Technology', copies: 3, available_copies: 2 },
-    { id: 2, name: 'Projector', type: 'Technology', copies: 3, available_copies: 0 },
-    { id: 3, name: 'Tablet', type: 'Technology', copies: 4, available_copies: 2 },
-    { id: 4, name: 'Camera', type: 'Photography', copies: 3, available_copies: 3 },
-    { id: 5, name: 'Microphone', type: 'Audio', copies: 2, available_copies: 1 },
-];
-
 /***********************************************/
 export default function EquipmentPage({ user, 
                                         setUser, 
@@ -40,41 +32,40 @@ export default function EquipmentPage({ user,
     const [reserveStart, setReserveStart] = useState(dayjs().add(1, 'hour'));
     const [reserveEnd, setReserveEnd] = useState(dayjs().add(3, 'hour'));
     const [notification, setNotification] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
 
+    // Populate the type drop down box
     const types = ['All', ...new Set(equipment.map(item => item.type))];
 
-    // // Initiate user login
-    // //------------------------------------------/
-    // useEffect(() => { 
-    // //------------------------------------------/
-    //     // If there is no user, do not alloow them to acess library
-    //     if(!user) return;
-
-    //     const fetchLibraryEquipment = async () => {
-    //         try {
-    //             //Get the equipment from the databse
-    //             const response = await apiClient('/api/psu/equipment', {
-    //                 method: 'GET'
-    //             });
-                
-    //             //Set them into the Library Page
-    //             setEquipment(response.available_equipment);
-
-    //         } catch (error) {
-    //             console.error('Error fetching equipment:', error);
-    //         }   
-    //     }
-
-    //     fetchLibraryEquipment();
-    // }, [user]);
-
-
+    // Populate the equiment table
     //------------------------------------------/
     useEffect(() => { 
     //------------------------------------------/
-        setEquipment(sampleEquipment);
-    }, [user]);   
+        // If there is no user, do not alloow them to acess library
+        if(!user) return;
+
+        const fetchLibraryEquipment = async () => {
+            try {
+                //Get the equipment from the databse
+                const response = await apiClient('/api/psu/bookstore/equipment', {
+                    method: 'GET'
+                });
+                
+                console.log("response:", response);
+
+                //Set them into the equipment table
+                setEquipment(response.available_equipment);
+
+            } catch (error) {
+                console.error('Error fetching equipment:', error);
+            }   
+        }
+
+        fetchLibraryEquipment();
+    }, [user]);
+  
     
+    //Filers the equipment when the sord drop box is used
     //------------------------------------------/
     const filteredEquipment = equipment.filter(item => {
     //------------------------------------------/
@@ -107,18 +98,18 @@ export default function EquipmentPage({ user,
 
         try {
             // Request the reservation from the backend
-            const data = await apiClient(`/api/psu/equipment/reserve`, {
+            const data = await apiClient(`/api/psu/bookstore/reserve_equipment`, {
                 method: 'PUT',
                 body: JSON.stringify(payload)
             });
-
-            console.log("data", data);
 
             // If the reservation was successful, add the reservation to the list of 
             // all reservations the student has made
             if(data.status === "success") {
                 // Collect all the releveant information
-                const newReservation = { "equipment_title": selectedEquipment.name,
+                const newReservation = { "item_type": selectedEquipment.name,
+                                         "item": selectedEquipment.model,
+                                         "reservation_id": data.reservation_id,
                                          "reserve_start": reserveStart.toISOString(),
                                          "reserve_end": reserveEnd.toISOString() };
                 
@@ -132,18 +123,11 @@ export default function EquipmentPage({ user,
             // Update the UI with the new list of equipment
             setEquipment(data.updated_available_equipment);
 
-
         } catch (error) {
-            console.error('Failed to read item:', error);
-            setErrorMsg(error.message);
+            setErrorMsg(`Error reserving equipment: ${error.message}`);
         }
 
-        // console.log("user:", user.user);
-        // console.log("Reserving book:", selectedBook);
-        // console.log("Reserve Start:", reserveStart);
-        // console.log("Reserve End:", reserveEnd);
-
-        // Demo only: this does not yet create a database reservation.
+        // Present a notification to the user that the reservation was successful
         setNotification(`Reservation request for ${selectedEquipment.name} is ready.`);
         setSelectedEquipment(null);
     };
@@ -214,6 +198,7 @@ export default function EquipmentPage({ user,
                                 <TableRow>
                                     <TableCell>Name</TableCell>
                                     <TableCell>Type</TableCell>
+                                    <TableCell>Manufacturer</TableCell>
                                     <TableCell align="center">Total Copies</TableCell>
                                     <TableCell align="center">Available</TableCell>
                                     <TableCell align="right">Action</TableCell>
@@ -229,6 +214,7 @@ export default function EquipmentPage({ user,
                                     <TableRow key={equipment.id} hover>
                                         <TableCell>{equipment.name}</TableCell>
                                         <TableCell>{equipment.type}</TableCell>
+                                        <TableCell>{equipment.manufacturer}</TableCell>
                                         <TableCell align="center">{equipment.copies}</TableCell>
                                         <TableCell align="center">
                                             <Chip
@@ -348,6 +334,22 @@ export default function EquipmentPage({ user,
                             onClose={() => setNotification('')}
                         >
                             {notification}
+                        </Alert>
+                    </Snackbar>
+
+                    {/* Error Notification */}
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                    <Snackbar
+                        open={Boolean(errorMsg)}
+                        autoHideDuration={4000}
+                        onClose={() => setErrorMsg('')}
+                    >
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                        <Alert
+                            severity="error"
+                            onClose={() => setErrorMsg('')}
+                        >
+                            {errorMsg}
                         </Alert>
                     </Snackbar>
                     
