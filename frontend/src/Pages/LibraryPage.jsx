@@ -17,14 +17,6 @@ import dayjs from 'dayjs';
 
 const drawerWidth = 220;
 
-const sampleBooks = [
-    { id: 1, title: 'The Hobbit', genre: 'Fantasy', copies: 3, available_copies: 2 },
-    { id: 2, title: '1984', genre: 'Dystopian', copies: 3, available_copies: 0 },
-    { id: 3, title: 'Dune', genre: 'Science Fiction', copies: 4, available_copies: 2 },
-    { id: 4, title: 'The Great Gatsby', genre: 'Classic', copies: 3, available_copies: 3 },
-    { id: 5, title: 'Fahrenheit 451', genre: 'Dystopian', copies: 2, available_copies: 1 },
-];
-
 /***********************************************/
 export default function LibraryPage({ user, 
                                       setUser, 
@@ -40,6 +32,7 @@ export default function LibraryPage({ user,
     const [reserveStart, setReserveStart] = useState(dayjs().add(1, 'hour'));
     const [reserveEnd, setReserveEnd] = useState(dayjs().add(3, 'hour'));
     const [notification, setNotification] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
 
     const genres = ['All', ...new Set(books.map(book => book.genre))];
 
@@ -62,6 +55,7 @@ export default function LibraryPage({ user,
 
             } catch (error) {
                 console.error('Error fetching books:', error);
+                setErrorMsg(`Error fetching books: ${error.message}`);
             }   
         }
 
@@ -101,18 +95,18 @@ export default function LibraryPage({ user,
 
         try {
             // Request the reservation from the backend
-            const data = await apiClient(`/api/psu/bookstore/reserve`, {
+            const data = await apiClient(`/api/psu/bookstore/reserve_book`, {
                 method: 'PUT',
                 body: JSON.stringify(payload)
             });
-
-            console.log("data", data);
 
             // If the reservation was successful, add the reservation to the list of 
             // all reservations the student has made
             if(data.status === "success") {
                 // Collect all the releveant information
-                const newReservation = { "book_title": selectedBook.title,
+                const newReservation = { "item_type": "book",
+                                         "item": selectedBook.title,
+                                         "reservation_id": data.reservation_id,
                                          "reserve_start": reserveStart.toISOString(),
                                          "reserve_end": reserveEnd.toISOString() };
                 
@@ -129,13 +123,8 @@ export default function LibraryPage({ user,
 
         } catch (error) {
             console.error('Failed to read item:', error);
-            setErrorMsg(error.message);
+            setErrorMsg(`Error reserving books: ${error.message}`);
         }
-
-        // console.log("user:", user.user);
-        // console.log("Reserving book:", selectedBook);
-        // console.log("Reserve Start:", reserveStart);
-        // console.log("Reserve End:", reserveEnd);
 
         // Demo only: this does not yet create a database reservation.
         setNotification(`Reservation request for ${selectedBook.title} is ready.`);
@@ -342,6 +331,22 @@ export default function LibraryPage({ user,
                             onClose={() => setNotification('')}
                         >
                             {notification}
+                        </Alert>
+                    </Snackbar>
+
+                    {/* Error Notification */}
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                    <Snackbar
+                        open={Boolean(errorMsg)}
+                        autoHideDuration={4000}
+                        onClose={() => setErrorMsg('')}
+                    >
+                    {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
+                        <Alert
+                            severity="error"
+                            onClose={() => setErrorMsg('')}
+                        >
+                            {errorMsg}
                         </Alert>
                     </Snackbar>
                     
