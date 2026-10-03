@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import LoginPage from './Pages/LoginPage';
 import LibraryPage from './Pages/LibraryPage';
+import EquipmentPage from './Pages/EquipmentPage';
 
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -106,6 +107,15 @@ export default function App() {
                     }
                     {...allyProps(1)}
                     />
+                    {/* Equipment Tab */}
+                    <Tab
+                    label ={
+                        <Typography>
+                            {'Equipment'}
+                        </Typography>
+                    }
+                    {...allyProps(2)}
+                    />
                 </Tabs>
                 {/* Username display*/}
                 <Box sx={{ 
@@ -142,6 +152,14 @@ export default function App() {
                 </div>
                 <div hidden= {tabIndex !== 1}>
                     <LibraryPage
+                        user={user}
+                        setUser={setUser}
+                        reservationInfo={reservationInfo}
+                        setReservationInfo={setReservationInfo}
+                    />
+                </div>
+                <div hidden= {tabIndex !== 2}>
+                    <EquipmentPage
                         user={user}
                         setUser={setUser}
                         reservationInfo={reservationInfo}
