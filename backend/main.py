@@ -11,6 +11,8 @@ from authlib.integrations.starlette_client import OAuth
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from datetime import datetime, timedelta, timezone
+import smtplib
+from email.message import EmailMessage
 
 from pprint import pprint # DEBUG
 
@@ -325,6 +327,57 @@ def reserve_equip(equipment_id: int = Body(...),
     return {"status": "success", 
             "reservation_id": reservation_id,
             "updated_available_equipment": updated_available_equipment }
+
+
+# @info: Send an email receipt to the user when they have chacked out an item
+#-------------------------------------------------------------------#
+@router.put("/email_receipt")
+#-------------------------------------------------------------------#
+def email_notification(reservation_items: list = Body(...),
+                       email_Addr: str = Body(...),
+                       user: dict = Depends(require_auth)):
+
+   # Assemble the body
+    body_text = "Here is your reservation receipt from the PSU Bookstore:\n\n"
+    
+    for item in reservation_items:
+        body_text += f"Item: {item.get('item_type')} - {item.get('item')}\n"
+        body_text += f"Reservation ID: {item.get('reservation_id')}\n"
+        body_text += f"Start: {item.get('reserve_start')}\n"
+        body_text += f"End: {item.get('reserve_end')}\n"
+        body_text += "-" * 30 + "\n"
+        
+    body_text += "\nThank you for your reservation!"
+
+    # construct the email
+    msg = EmailMessage()
+    msg.set_content(body_text)
+    msg['Subject'] = "Your Reservation Receipt"
+    msg['From'] = ""  # This is a sender email
+    msg['To'] = email_Addr  # Target email
+
+    # Send the email
+    try:
+        # Example using Gmail's SMTP server
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        sender_email = "" # This is the sender email
+        sender_password = "" # This is the google App Code
+
+        # Connect, login, and send
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls() 
+        server.login(sender_email, sender_password)
+        server.send_message(msg)
+        server.quit()
+
+        
+        return {"status": "success"}
+
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+        # Return a 500 status or similar if you want the frontend to know it failed
+        return {"status": "error", "message": str(e)}
 
 
 #####################################################################
