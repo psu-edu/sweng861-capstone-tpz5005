@@ -1,4 +1,6 @@
-from fastapi import FastAPI, Request, Response, HTTPException, APIRouter
+import traceback
+
+from fastapi import Body, Depends, FastAPI, Request, Response, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
@@ -7,14 +9,19 @@ import os
 from authlib.integrations.starlette_client import OAuth
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+from datetime import datetime, timedelta, timezone
 
-#import pprint
+from pprint import pprint # DEBUG
 
 from logger.logger import log_event
-from security.github_auth import handle_user_login_data
-from security.custom_auth import valid_user, create_jwt_token
 
-from database.bookDatabase import init_book_db, populate_with_books
+# Security Related Imports
+from security.github_auth import handle_user_login_data, init_db
+from security.custom_auth import valid_user, create_jwt_token
+from security.security_utility import require_auth
+
+# Database Related Imports
+from database.book_database import init_book_db, populate_with_books, get_available_books, reserve_book
 
 app = FastAPI(
     title="SWENG861 Capstone tpz5005",
@@ -55,10 +62,22 @@ app.add_middleware(SessionMiddleware,
 
 # A gateway for OSRS database specific endpoints
 router = APIRouter(
-    prefix="/api/bookstore/database",
+    prefix="/api/psu/bookstore",
     tags=["PSU Bookstore Gateway"]
 )
 
+# activate the router
+app.include_router(router)
+
+#----------- Database Init ------------#
+# GitHub Auth
+init_db() 
+
+# Book Database
+init_book_db()
+populate_with_books()
+
+#--------------------------------------#
 
 # Service Provider login
 # @info: This is the endpoint that re-directs the user to the external
@@ -94,13 +113,17 @@ async def auth_callback(request: Request):
         # authentication token
         auth_token = await oauth.github.authorize_access_token(request)
 
+        # print("---------- AUTH TOKEN ----------")
+        # pprint(auth_token)
+        # print("----------------------------------")
+
         # With the auth token, ask github for information about user
         response_type = await oauth.github.get("user", token=auth_token)
         profile_info = response_type.json()
 
         # Saving this for debug purposes
         # print("---------- PROFILE INFO ----------")
-        # pprint.pprint(profile_info)
+        # pprint(profile_info)
         # print("----------------------------------")
 
         # If the email is private, we need to explicitly ask for an email
@@ -221,12 +244,53 @@ async def get_active_user(request: Request):
 
 #####################################################################
 
+# @info: Get Endpoint to query all the books in the library database
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+@router.get("/books")
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def get_books(user: dict = Depends(require_auth)):
+
+    available_books = get_available_books(datetime.now())
+    
+    # Saving this for debug purposes
+    # print("---------- AVAILABLE BOOKS ----------")
+    # pprint(available_books)
+    # print("----------------------------------")
+
+    return {"available_books": available_books}
 
 
+# @info: Get Endpoint to query all the books in the library database
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+@router.put("/reserve")
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+def get_books(book_id: int = Body(...),
+              reservation_id: str = Body(...),
+              reserve_Start: datetime = Body(...),   
+              reserve_End: datetime = Body(...),
+              user: dict = Depends(require_auth)):
 
-@app.get("/api/hello")
-def read_root():
-    return {"message": "Hello from FastAPI backend!"}
+    # Validate the input parameters
+    if book_id is None or reservation_id is None or reserve_Start is None or reserve_End is None:
+        raise HTTPException(status_code=400, detail="Missing required parameters")
+
+    # Reserve the book
+    reserve_book(book_id, reservation_id, reserve_Start, reserve_End)
+
+    # We need to update the frontend, so get the updated available books after the reservation
+    # Make sure you use the right time!!!
+    updated_available_books = get_available_books(reserve_Start) 
+
+    # # Saving this for debug purposes  
+    # print("---------- RESERVATION  INFO ----------")
+    # pprint(book_id)
+    # pprint(reservation_id)
+    # pprint(reserve_Start)
+    # pprint(reserve_End)
+    # print("----------------------------------")
+
+    return {"status": "success", 
+            "updated_available_books": updated_available_books }
 
 
 
