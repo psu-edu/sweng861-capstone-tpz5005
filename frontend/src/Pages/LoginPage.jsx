@@ -21,34 +21,34 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
     //------------------------------------------/
     useEffect(() => { 
     //------------------------------------------/
-        // apiClient('/api/user')
-        //     .then(data => {
-        //         setUserData(data);
-        //         // If the data is good
-        //         if(data && data.authenticated)
-        //         {   
-        //             //Kick it up to the Tabs
-        //             setUser(previousState =>{
-        //                 return {
-        //                     ...previousState,
-        //                     user: data.user.username
-        //                 };
-        //             });
-        //         }
-        //     })
-        //     .catch(error => {
-        //         console.error('Failed to get authentication data:', error);
-        //         setErrorMsg(error.message);
-        //     });
+        apiClient('/api/user')
+            .then(data => {
+                setUserData(data);
+                // If the data is good
+                if(data && data.authenticated)
+                {   
+                    //Kick it up to the Tabs
+                    setUser(previousState =>{
+                        return {
+                            ...previousState,
+                            user: data.user.username
+                        };
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Failed to get authentication data:', error);
+                setErrorMsg(error.message);
+            });
     }, []);
 
-    // //------------------------------------------/
-    // useEffect(() => {
-    // //------------------------------------------/
-    //     console.log("clearing token");
-    //     // Clear previous custom tokens
-    //     localStorage.removeItem('token');
-    // }, []);
+    //------------------------------------------/
+    useEffect(() => {
+    //------------------------------------------/
+        console.log("clearing token");
+        // Clear previous custom tokens
+        localStorage.removeItem('token');
+    }, []);
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
     const handleCustomLogin = async (e) => {
@@ -122,7 +122,7 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                         <br />
                         {/* Logout Button */}
                         <a href={'https://localhost:8000/auth/logout'} style={styles.logoutButton}>
-                            {t('logOut')}
+                            {('Log Out')}
                         </a>
                     </div>
                 ) : (
