@@ -76,7 +76,7 @@ def reserve_equipment(equipment_id,
 
 
 #-----------------------------------------------#
-def get_equipment_by_time(requested_time: datetime):
+def get_available_equipment(requested_time: datetime):
 #-----------------------------------------------#
     time_str = requested_time.isoformat()
 
@@ -102,7 +102,7 @@ def get_equipment_by_time(requested_time: datetime):
                 e.manufacturer,
                 e.model,
                 e.copies
-            HAVING available_copies > 0
+            HAVING  e.copies - COUNT(r.id) > 0
         """, (time_str, time_str)).fetchall()
 
     return [dict(row) for row in rows]
