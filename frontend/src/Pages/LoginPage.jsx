@@ -102,15 +102,16 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
 
     return (
         <div style = {{  padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-            <h1 style = {styles.heading}> {('Test1')} </h1>
+            <h1 style = {styles.heading}> {('Authenticate')} </h1>
 
             {/* Login interface */}
+            {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
             <div style={styles.card}>  
                 {userData?.authenticated ? (
 
                     /* Rendered when the user has successfully logged in via OAuth */
                     <div>
-                        <p><strong> Hello, {userData.user.name || userData.user.username}! </strong></p>
+                        <p><strong> {('Hello')}, {userData.user.name || userData.user.username}! </strong></p>
                         {userData.user.avatar_url && (
                             <img 
                                 src={userData.user.avatar_url} 
@@ -181,6 +182,7 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                     </div>
                 )}
             </div>
+            {/*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/}
         </div>
     );
 }
