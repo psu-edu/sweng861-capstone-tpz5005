@@ -18,6 +18,8 @@ export default function App() {
     //For keeping track of tabs
     const [tabIndex, setTabIndex] = useState(0);
 
+    const [reservationInfo, setReservationInfo] = useState([]);
+
     const [sessionMessage, setSessionMessage] = useState(null)
 
     function allyProps(index) {
@@ -26,6 +28,15 @@ export default function App() {
             'aria-controls': `simple-tabPanel-${index}`
         }     
     }
+
+    // DEBUG
+    //------------------------------------------/
+    useEffect(() => {
+    //------------------------------------------/
+        console.log("Reserved info updated in App.jsx:", reservationInfo);
+    }, [reservationInfo]);
+  
+
 
     //------------------------------------------/
     useEffect(() => {
@@ -109,7 +120,7 @@ export default function App() {
                 </Box>
             </Box>
 
-            <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+            <Box sx={{ flexGrow: 1, minWidth: 0, overflowY: 'auto', height: '100vh' }}>
 
                 {/* Experimental Alert Banner -- This might be overkill */}
                 {sessionMessage && (
@@ -133,6 +144,8 @@ export default function App() {
                     <LibraryPage
                         user={user}
                         setUser={setUser}
+                        reservationInfo={reservationInfo}
+                        setReservationInfo={setReservationInfo}
                     />
                 </div>
             </Box>
