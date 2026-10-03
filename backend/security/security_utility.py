@@ -2,7 +2,7 @@ import jwt
 from fastapi import Depends, Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from custom_auth import ALGORITHM, SECRET_KEY
+from .custom_auth import ALGORITHM, SECRET_KEY
 
 # Security object for custom authentication
 security = HTTPBearer(auto_error=False)
