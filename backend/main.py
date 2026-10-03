@@ -1,5 +1,6 @@
 import traceback
 
+
 from fastapi import Body, Depends, FastAPI, Request, Response, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -22,6 +23,7 @@ from security.security_utility import require_auth
 
 # Database Related Imports
 from database.book_database import init_book_db, populate_with_books, get_available_books, reserve_book
+from database.equipment_database import init_equipment_db, populate_with_equipment, get_available_equipment, reserve_equipment
 
 app = FastAPI(
     title="SWENG861 Capstone tpz5005",
@@ -60,6 +62,7 @@ app.add_middleware(SessionMiddleware,
                    https_only=True)
 #--------------------------------------#
 
+#--------------- Router ---------------#
 # A gateway for OSRS database specific endpoints
 router = APIRouter(
     prefix="/api/psu/bookstore",
@@ -68,6 +71,7 @@ router = APIRouter(
 
 # activate the router
 app.include_router(router)
+#--------------------------------------#
 
 #----------- Database Init ------------#
 # GitHub Auth
@@ -77,7 +81,14 @@ init_db()
 init_book_db()
 populate_with_books()
 
+# Equipment Database
+init_equipment_db()
+populate_with_equipment()
 #--------------------------------------#
+
+
+#####################################################################
+
 
 # Service Provider login
 # @info: This is the endpoint that re-directs the user to the external
@@ -113,18 +124,9 @@ async def auth_callback(request: Request):
         # authentication token
         auth_token = await oauth.github.authorize_access_token(request)
 
-        # print("---------- AUTH TOKEN ----------")
-        # pprint(auth_token)
-        # print("----------------------------------")
-
         # With the auth token, ask github for information about user
         response_type = await oauth.github.get("user", token=auth_token)
         profile_info = response_type.json()
-
-        # Saving this for debug purposes
-        # print("---------- PROFILE INFO ----------")
-        # pprint(profile_info)
-        # print("----------------------------------")
 
         # If the email is private, we need to explicitly ask for an email
         # to recover any information
@@ -242,56 +244,87 @@ async def get_active_user(request: Request):
         return {"authenticated": False}
     return {"authenticated": True, "user": user}
 
+
 #####################################################################
 
+
 # @info: Get Endpoint to query all the books in the library database
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#-------------------------------------------------------------------#
 @router.get("/books")
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#-------------------------------------------------------------------#
 def get_books(user: dict = Depends(require_auth)):
 
     available_books = get_available_books(datetime.now())
-    
-    # Saving this for debug purposes
-    # print("---------- AVAILABLE BOOKS ----------")
-    # pprint(available_books)
-    # print("----------------------------------")
 
     return {"available_books": available_books}
 
 
-# @info: Get Endpoint to query all the books in the library database
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-@router.put("/reserve")
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def get_books(book_id: int = Body(...),
-              reservation_id: str = Body(...),
-              reserve_Start: datetime = Body(...),   
-              reserve_End: datetime = Body(...),
-              user: dict = Depends(require_auth)):
+# @info: Reserve endpoint that reserves a book in the book database
+#-------------------------------------------------------------------#
+@router.put("/reserve_book")
+#-------------------------------------------------------------------#
+def reserve_books(book_id: int = Body(...),
+                  reservation_id: str = Body(...),
+                  reserve_Start: datetime = Body(...),   
+                  reserve_End: datetime = Body(...),
+                  user: dict = Depends(require_auth)):
 
     # Validate the input parameters
     if book_id is None or reservation_id is None or reserve_Start is None or reserve_End is None:
         raise HTTPException(status_code=400, detail="Missing required parameters")
 
     # Reserve the book
-    reserve_book(book_id, reservation_id, reserve_Start, reserve_End)
+    try:
+        reservation_id = reserve_book(book_id, reservation_id, reserve_Start, reserve_End)
+    except ValueError as err:
+        raise HTTPException(status_code=409, detail=str(err))
 
     # We need to update the frontend, so get the updated available books after the reservation
     # Make sure you use the right time!!!
     updated_available_books = get_available_books(reserve_Start) 
 
-    # # Saving this for debug purposes  
-    # print("---------- RESERVATION  INFO ----------")
-    # pprint(book_id)
-    # pprint(reservation_id)
-    # pprint(reserve_Start)
-    # pprint(reserve_End)
-    # print("----------------------------------")
-
     return {"status": "success", 
+            "reservation_id": reservation_id,
             "updated_available_books": updated_available_books }
 
+# @info: Get the availble equipment
+#-------------------------------------------------------------------#
+@router.get("/equipment")
+#-------------------------------------------------------------------#
+def get_equipment(user: dict = Depends(require_auth)):
+
+    available_equipment = get_available_equipment(datetime.now())
+
+    return {"available_equipment": available_equipment}
+
+
+# @info: Reserve endpoint that reserves a book in the book database
+#-------------------------------------------------------------------#
+@router.put("/reserve_equipment")
+#-------------------------------------------------------------------#
+def reserve_equip(equipment_id: int = Body(...),
+                  reservation_id: str = Body(...),
+                  reserve_Start: datetime = Body(...),   
+                  reserve_End: datetime = Body(...),
+                  user: dict = Depends(require_auth)):
+
+    # Validate the input parameters
+    if equipment_id is None or reservation_id is None or reserve_Start is None or reserve_End is None:
+        raise HTTPException(status_code=400, detail="Missing required parameters")
+
+    # Reserve the equipment
+    try:
+        reservation_id = reserve_equipment(equipment_id, reservation_id, reserve_Start, reserve_End)
+    except ValueError as err:
+            raise HTTPException(status_code=409, detail=str(err)) 
+
+    # We need to update the frontend, so get the updated available equipment after the reservation
+    # Make sure you use the right time!!!
+    updated_available_equipment = get_available_equipment(reserve_Start) 
+
+    return {"status": "success", 
+            "reservation_id": reservation_id,
+            "updated_available_equipment": updated_available_equipment }
 
 
 #####################################################################
