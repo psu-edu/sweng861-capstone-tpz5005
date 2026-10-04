@@ -1,6 +1,4 @@
 import traceback
-
-
 from fastapi import Body, Depends, FastAPI, Request, Response, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
@@ -10,11 +8,9 @@ import os
 from authlib.integrations.starlette_client import OAuth
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import smtplib
 from email.message import EmailMessage
-
-from pprint import pprint # DEBUG
 
 from logger.logger import log_event
 
@@ -298,6 +294,7 @@ def reserve_books(book_id: int = Body(...),
     return {"status": "success", 
             "reservation_id": reservation_id,
             "updated_available_books": updated_available_books }
+
 
 # @info: Get the availble equipment
 #-------------------------------------------------------------------#
