@@ -78,9 +78,12 @@ describe('CheckoutPage', () => {
       screen.getByRole('button', { name: 'Checkout Items' })
     );
 
-    expect(screen.getByText('Success!')).toBeInTheDocument();
+    //expect(screen.getByText('Success!')).toBeInTheDocument();
+    expect(await screen.findByText('Your Items are ready!')).toBeInTheDocument();
     expect(
-      screen.getByText('Items successfully checked out!')
+      //screen.getByText('Items successfully checked out!')
+      screen.getByText(`Please click 'Ok' to check out your items.`)
+      
     ).toBeInTheDocument();
 
     // Confirm checkout.
