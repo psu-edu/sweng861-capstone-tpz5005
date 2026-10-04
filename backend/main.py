@@ -271,6 +271,8 @@ def reserve_books(book_id: int = Body(...),
                   reserve_End: datetime = Body(...),
                   user: dict = Depends(require_auth)):
 
+    created_by = user.get("username") or user.get("user")
+
     # Validate the input parameters
     if book_id is None or reservation_id is None or reserve_Start is None or reserve_End is None:
         raise HTTPException(status_code=400, detail="Missing required parameters")
@@ -280,6 +282,14 @@ def reserve_books(book_id: int = Body(...),
         reservation_id = reserve_book(book_id, reservation_id, reserve_Start, reserve_End)
     except ValueError as err:
         raise HTTPException(status_code=409, detail=str(err))
+
+    log_event(
+        level="INFO",
+        event_name="Book Reservation",
+        message=f"User '{created_by} reserved book with id: '{book_id}'",
+        username=reservation_id,
+        auth_provider=created_by
+    )
 
     # We need to update the frontend, so get the updated available books after the reservation
     # Make sure you use the right time!!!
@@ -310,6 +320,8 @@ def reserve_equip(equipment_id: int = Body(...),
                   reserve_End: datetime = Body(...),
                   user: dict = Depends(require_auth)):
 
+    created_by = user.get("username") or user.get("user")
+
     # Validate the input parameters
     if equipment_id is None or reservation_id is None or reserve_Start is None or reserve_End is None:
         raise HTTPException(status_code=400, detail="Missing required parameters")
@@ -319,6 +331,14 @@ def reserve_equip(equipment_id: int = Body(...),
         reservation_id = reserve_equipment(equipment_id, reservation_id, reserve_Start, reserve_End)
     except ValueError as err:
             raise HTTPException(status_code=409, detail=str(err)) 
+
+    log_event(
+        level="INFO",
+        event_name="Equipment Reservation",
+        message=f"User '{created_by} reserved book with id: '{equipment_id}'",
+        username=reservation_id,
+        auth_provider=created_by
+    )
 
     # We need to update the frontend, so get the updated available equipment after the reservation
     # Make sure you use the right time!!!
@@ -336,6 +356,16 @@ def reserve_equip(equipment_id: int = Body(...),
 def email_notification(reservation_items: list = Body(...),
                        email_Addr: str = Body(...),
                        user: dict = Depends(require_auth)):
+
+    created_by = user.get("username") or user.get("user")
+
+    log_event(
+        level="INFO",
+        event_name="Email Receipt",
+        message=f"User '{created_by} requested an email receipt at: '{email_Addr}'",
+        username=created_by,
+        auth_provider=created_by
+    )
 
    # Assemble the body
     body_text = "Here is your reservation receipt from the PSU Bookstore:\n\n"
