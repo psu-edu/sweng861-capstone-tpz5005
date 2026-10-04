@@ -77,7 +77,9 @@ describe('LibraryPage', () => {
   // =============================================================/
   // 2) Get Price and IDs when user is valid
   // =============================================================/
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
   test('successfully reserves a book and adds it to reservation info', async () => {
+  //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
     apiClient
       .mockResolvedValueOnce({
         available_books: mockBooks
@@ -127,7 +129,7 @@ describe('LibraryPage', () => {
     // Execute the functional state update and inspect the resulting list.
     const updateReservations = mockSetReservationInfo.mock.calls[0][0];
     const updatedReservations = updateReservations([]);
-
+    
     expect(updatedReservations).toHaveLength(1);
     expect(updatedReservations[0]).toEqual(
       expect.objectContaining({
