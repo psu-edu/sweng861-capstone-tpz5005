@@ -15,7 +15,7 @@ This is the repository containing my capstone project for a Campus Library. Stud
 
 ```bash
 # cd into the repository
-cd sweng861-capstone-tpz5005
+cd sweng861-capstone-tpz5005/
 
 # Setup environment
 source build.sh
