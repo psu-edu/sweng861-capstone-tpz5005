@@ -10,7 +10,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "jest",
-    "test-frontend": "docker-compose build frontend && docker-compose up -d frontend && DEBUG_PRINT_LIMIT=0 jest --env=jsdom"
+    "test-frontend": "docker-compose build frontend && docker-compose up -d frontend && DEBUG_PRINT_LIMIT=0 jest --env=jsdom",
+    "test-backend": "docker-compose build backend && docker-compose up -d && docker-compose exec backend python -m pytest unitTests/",
+    "test-all": "npm run test-backend && npm run test-frontend"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
