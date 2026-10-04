@@ -43,7 +43,7 @@ export default function CheckoutPage({ user,
         // Make sure we cant open a popup window if there
         // is no reserved items
         if(reservationInfo.length > 0) {
-            const message = "Items successfully checked out!"
+            const message = "Please click 'Ok' to check out your items."
             setPopupMessage(message);
             setPopupOpen(true);
 
@@ -207,7 +207,7 @@ export default function CheckoutPage({ user,
                     {/* Popup title */}
                     {/*---------------------------------------------------------------*/}
                     <DialogTitle>
-                        Success!
+                        Your Items are ready!
                     </DialogTitle>
                     {/*---------------------------------------------------------------*/}
 
