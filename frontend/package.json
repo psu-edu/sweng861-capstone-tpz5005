@@ -9,7 +9,8 @@
     "start-all": "concurrently \"npm run start\" \"npm run backend\"",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test-frontend": "docker-compose build frontend && docker-compose up -d frontend && DEBUG_PRINT_LIMIT=0 jest --env=jsdom"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -22,11 +23,19 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@babel/core": "^8.0.6",
+    "@babel/preset-env": "^8.0.6",
+    "@babel/preset-react": "^8.0.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "babel-jest": "^30.5.2",
     "concurrently": "^10.0.5",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
     "vite": "^5.4.1"
   },
   "keywords": [],
