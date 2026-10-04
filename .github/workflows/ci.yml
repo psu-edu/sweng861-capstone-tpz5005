@@ -1,0 +1,92 @@
+name: CI/CD Pipeline
+
+# 1) Trigger
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 2) Build Stage: Checkout Repo
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # 2) Build Stage: Setup Environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # Build script steps
+      - name: Prepare Local SSL Certificates and .env File
+        run: |
+          mkdir -p backend
+          if [ ! -f "backend/cert.pem" ] || [ ! -f "backend/key.pem" ]; then
+            openssl req -x509 -newkey rsa:4096 -nodes \
+              -out backend/cert.pem -keyout backend/key.pem \
+              -days 365 -subj "/CN=localhost"
+          fi
+
+          if [ ! -f ".env" ]; then
+            touch .env
+          fi
+          
+          if ! grep -q "^CUSTOM_JWT_KEY=" ".env"; then
+            JWT_SECRET=$(openssl rand -hex 32)
+            echo "CUSTOM_JWT_KEY=$JWT_SECRET" >> .env
+          fi
+
+      # 2) Build Stage: Install Dependencies
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+        
+      # 2) Build Stage: Build Frontend
+      - name: Build Frontend Assets
+        working-directory: ./frontend
+        run: npm run build
+
+      # 3) Test Stage: Run Frontend & Backend TestsS
+      - name: Run Frontend Tests (Jest)
+        working-directory: ./frontend
+        run: DEBUG_PRINT_LIMIT=0 npx jest --env=jsdom
+        env:
+            TZ: America/New_York
+
+      - name: Run Backend Unit Tests (Pytest)
+        run: python -m pytest backend/unitTests/
+        env:
+            PYTHONPATH: ./backend
+        
+      # 4) Package State: Build/Tag Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Tag Docker Images (Docker Compose)
+        run: |
+          docker compose build
+          docker tag sweng861-crud-tpz5005-backend:latest backend:${{ github.sha }}
+          docker tag sweng861-crud-tpz5005-backend:latest backend:latest
+
+    # 5) Quality Gate: Security Audit
+      - name: Run Security Audit (Frontend)
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
