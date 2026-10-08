@@ -4,7 +4,11 @@ import { styles } from '../styles';
 import { apiClient } from '../apiClient';
 
 /***********************************************/
-export default function LoginPage({user, setUser, onLoginSuccess}) {
+export default function LoginPage({user, 
+                                   setUser, 
+                                   role, 
+                                   setRole, 
+                                   onLoginSuccess}) {
 /***********************************************/
     //User login data
     const [userData, setUserData] = useState(null);
@@ -45,7 +49,6 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
     //------------------------------------------/
     useEffect(() => {
     //------------------------------------------/
-        console.log("clearing token");
         // Clear previous custom tokens
         localStorage.removeItem('token');
     }, []);
@@ -80,6 +83,7 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
             // if it is authenticated
             if(data.authenticated && data.access_token) {
                 localStorage.setItem('token', data.access_token);
+
                 setUserData(data);
 
                 //Kick it up to the Tabs
@@ -87,6 +91,14 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                     return {
                         ...previousState,
                         user: data.user.username
+                    };
+                });
+
+                //Kick the role up to App.jsx as well
+                setRole(previousState =>{
+                    return {
+                        ...previousState,
+                        role: data.role
                     };
                 });
             }
@@ -142,8 +154,8 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                                    placeholder = {('abc1234@psu.edu')}
-                                    title= {('Valid test email: psu1855@psu.edu')}
+                                    placeholder = {('To Test Admin Access: prof456@psu.edu')}
+                                    title= {('Valid test email: prof456@psu.edu')}
                                 />
                                 {/* Inline Error */}
                                 {formErrors.username && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.username}</span>}
@@ -157,8 +169,8 @@ export default function LoginPage({user, setUser, onLoginSuccess}) {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-                                    placeholder = {('Passwords are case sensitive')}
-                                    title= {('Valid test password: PennState1855')}
+                                    placeholder = {('To Test Admin Access: professor123')}
+                                    title= {('Valid test password: professor123')}
                                 />
                                 {/* Inline Error */}
                                 {formErrors.password && <span style={{ color: 'red', fontSize: '12px' }}>{formErrors.password}</span>}
