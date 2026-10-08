@@ -54,6 +54,7 @@ def init_book_db():
 
         connection.commit()
 
+
 #Info: Function to add books to database (Create)
 # Params
 #   book_id - The ID of the book
@@ -108,18 +109,6 @@ def get_available_books(requested_time: datetime):
                 b.copies
             ORDER BY b.id
         """, (time_str, time_str)).fetchall()
-
-        # To print out availability information
-        # for book in books:
-        #     print(
-        #         f"id={book['id']} | "
-        #         f"title={book['title']} | "
-        #         f"copies={book['copies']} | "
-        #         f"reservations={book['reservation_count']} | "
-        #         f"available={book['available_copies']}"
-        #     )
-
-        # print("========================================\n")
 
         return [dict(book) for book in books]
 
@@ -276,9 +265,6 @@ def reserve_book(book_id, student_email, reserve_start, reserve_end):
                 "No copies available for the requested time"
             )
 
-        # DEBUG
-        #debug_book_state(connection, "BEFORE RESERVATION")
-
         # At least one copy is available throughout the
         # requested interval, so insert the new reservation.
         cursor = connection.execute("""
@@ -296,14 +282,30 @@ def reserve_book(book_id, student_email, reserve_start, reserve_end):
             reserve_end.isoformat()
         ))
 
-        #DEBUG
-        #debug_book_state(connection, "AFTER RESERVATION")
-
         # Return the ID assigned to this newly created
         # reservation so the endpoint can send it to
         # the frontend.
         return cursor.lastrowid
 
+# Get function for reading all reserved books
+#-----------------------------------------------#
+def get_all_reservations():
+#-----------------------------------------------#
+    with get_connection() as connection:
+
+        connection.execute("PRAGMA foreign_keys = ON")
+
+        reservations = connection.execute("""
+            SELECT
+                id,
+                book_id,
+                reserved_by,
+                reserve_start,
+                reserve_end
+            FROM reservations
+        """).fetchall()
+
+        return [dict(reservation) for reservation in reservations]
 
 
 # Helper function to populate the database
@@ -327,7 +329,45 @@ def populate_with_books():
 
         connection.commit()
 
+# Helper function to create dummy reservations
+#-----------------------------------------------#
+def populate_with_reservations():
+#-----------------------------------------------#
+    with get_connection() as connection:
+
+        reservations = [
+            (1, "student@psu.edu", 
+             "2026-10-01T09:00:00+00:00",
+             "2026-10-05T17:00:00+00:00"),
+
+            (2, "professor@psu.edu",
+             "2026-10-10T10:00:00+00:00",
+             "2026-10-15T16:00:00+00:00"),
+
+            (3, "student2@psu.edu",
+             "2026-11-01T08:00:00+00:00",
+             "2026-11-07T18:00:00+00:00"),
+
+            (1, "professor@psu.edu",
+             "2026-12-01T09:00:00+00:00",
+             "2026-12-10T17:00:00+00:00")
+        ]
+
+        connection.executemany("""
+            INSERT INTO reservations (
+                book_id,
+                reserved_by,
+                reserve_start,
+                reserve_end
+            )
+            VALUES (?, ?, ?, ?)
+        """, reservations)
+
+        connection.commit()
+
+#---------------------------------------------------------#
 def debug_book_state(connection, label):
+#---------------------------------------------------------#
     print(f"\n===== {label} =====")
 
     books = connection.execute("""
