@@ -11,16 +11,17 @@ from slowapi.util import get_remote_address
 from datetime import datetime
 import smtplib
 from email.message import EmailMessage
+import pprint
 
 from logger.logger import log_event
 
 # Security Related Imports
 from security.github_auth import handle_user_login_data, init_db
-from security.custom_auth import valid_user, create_jwt_token
+from security.custom_auth import valid_user, create_jwt_token, get_user_role
 from security.security_utility import require_auth
 
 # Database Related Imports
-from database.book_database import init_book_db, populate_with_books, get_available_books, reserve_book
+from database.book_database import init_book_db, populate_with_books, get_available_books, reserve_book, get_all_reservations, populate_with_reservations
 from database.equipment_database import init_equipment_db, populate_with_equipment, get_available_equipment, reserve_equipment
 
 app = FastAPI(
@@ -165,7 +166,7 @@ async def auth_callback(request: Request):
 async def login_custom(response: Response, user_data: dict):
     username = user_data.get("username")
     password = user_data.get("password")
-    
+
     # Check the credentials
     if not valid_user(username, password):
         # Log failed login attempts
@@ -181,7 +182,10 @@ async def login_custom(response: Response, user_data: dict):
         
     # Generate a token
     token = create_jwt_token(username)
-    
+
+    # Get the role
+    role = get_user_role(username)
+
     # Set cookie
     response.set_cookie(
         key="access_token",
@@ -204,6 +208,7 @@ async def login_custom(response: Response, user_data: dict):
     return {
         "authenticated": True,
         "user": {"username": username},
+        "role": role,
         "access_token": token,
         "token_type": "bearer"
     }
@@ -346,6 +351,32 @@ def reserve_equip(equipment_id: int = Body(...),
             "updated_available_equipment": updated_available_equipment }
 
 
+# @info: Special endpoint for admins only
+#-------------------------------------------------------------------#
+@router.get("/reservations")
+#-------------------------------------------------------------------#
+def get_reservations(user: dict = Depends(require_auth)):
+    
+    created_by = user.get("username") or user.get("user")
+
+    log_event(
+        level="INFO",
+        event_name="Reservations Queried",
+        message=f"Admin -- {created_by} -- has requested to see all reservations.",
+        username=created_by,
+        auth_provider=created_by
+    )
+
+    populate_with_reservations()
+
+    reservations = get_all_reservations()
+
+    return {
+        "status": "sucess",
+        "reservations": reservations
+    }
+
+    
 # @info: Send an email receipt to the user when they have chacked out an item
 #-------------------------------------------------------------------#
 @router.put("/email_receipt")
