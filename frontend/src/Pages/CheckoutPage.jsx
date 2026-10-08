@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { styles } from '../styles';
 import { apiClient } from '../apiClient';
 
@@ -29,14 +29,6 @@ export default function CheckoutPage({ user,
     //Email Reciept
     const [email, setEmail] = useState('');
 
-
-    //------------------------------------------/
-    useEffect(() => { 
-    //------------------------------------------/
-        console.log("reservation Info: ", reservationInfo)
-    }, [reservationInfo]);
-
-
     //------------------------------------------/
     const handleReserveItems = async (evnt) => {
     //------------------------------------------/
@@ -45,19 +37,13 @@ export default function CheckoutPage({ user,
         if(reservationInfo.length > 0) {
             const message = "Please click 'Ok' to check out your items."
             setPopupMessage(message);
-            setPopupOpen(true);
-
-            
+            setPopupOpen(true);    
         }
     };
 
     //------------------------------------------/
     const handlePopupClose = async (evnt) => {
     //------------------------------------------/
-        //Send a notification to user if email provided
-        console.log("email: ", email);
-        console.log("reservationinfo: ", reservationInfo);
-
         // If an email was provided, attempt to send a message
         if(email !== '') {
             //Assemble a payload of information
