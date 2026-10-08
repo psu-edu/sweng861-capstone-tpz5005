@@ -50,8 +50,6 @@ export default function EquipmentPage({ user,
                 const response = await apiClient('/api/psu/bookstore/equipment', {
                     method: 'GET'
                 });
-                
-                console.log("response:", response);
 
                 //Set them into the equipment table
                 setEquipment(response.available_equipment);
