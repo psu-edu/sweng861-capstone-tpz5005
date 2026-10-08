@@ -4,6 +4,7 @@ import LoginPage from './Pages/LoginPage';
 import LibraryPage from './Pages/LibraryPage';
 import EquipmentPage from './Pages/EquipmentPage';
 import CheckoutPage from './Pages/CheckoutPage';
+import ManageReservationsPage from './Pages/manageReservations';
 
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -15,8 +16,9 @@ import Button from '@mui/material/Button';
 /***********************************************/
 export default function App() {
 /***********************************************/
-    // for the welcome banner
+    // For the user login and user role
     const [user, setUser] = useState(null);
+    const [role, setRole] = useState('');
     //For keeping track of tabs
     const [tabIndex, setTabIndex] = useState(0);
 
@@ -30,15 +32,6 @@ export default function App() {
             'aria-controls': `simple-tabPanel-${index}`
         }     
     }
-
-    // // DEBUG
-    // //------------------------------------------/
-    // useEffect(() => {
-    // //------------------------------------------/
-    //     console.log("Reserved info updated in App.jsx:", reservationInfo);
-    // }, [reservationInfo]);
-  
-
 
     //------------------------------------------/
     useEffect(() => {
@@ -92,41 +85,53 @@ export default function App() {
                 >
                     {/* Login Tab */}
                     <Tab
-                    label ={
-                        <Typography>
-                            {'Login Page'}
-                        </Typography>
-                    }
-                    {...allyProps(0)}
+                        label ={
+                            <Typography>
+                                {'Login Page'}
+                            </Typography>
+                        }
+                        {...allyProps(0)}
                     />
                     {/* Library Tab */}
                     <Tab
-                    label ={
-                        <Typography>
-                            {'Library'}
-                        </Typography>
-                    }
+                        label ={
+                            <Typography>
+                                {'Library'}
+                            </Typography>
+                        }
                     {...allyProps(1)}
                     />
                     {/* Equipment Tab */}
                     <Tab
-                    label ={
-                        <Typography>
-                            {'Equipment'}
-                        </Typography>
-                    }
-                    {...allyProps(2)}
+                        label ={
+                            <Typography>
+                                {'Equipment'}
+                            </Typography>
+                        }
+                        {...allyProps(2)}
                     />
                     {/* Checkout Tab */}
                     <Tab
-                    label ={
-                        <Typography>
-                            {'Checkout'}
-                        </Typography>
-                    }
-                    {...allyProps(3)}
+                        label ={
+                            <Typography>
+                                {'Checkout'}
+                            </Typography>
+                        }
+                        {...allyProps(3)}
                     />
+                    {/* Reservations Tab */}
+                    {role?.role === 'admin' && (
+                        <Tab
+                            label ={
+                                <Typography>
+                                    {'View Reservations'}
+                                </Typography>
+                            }
+                            {...allyProps(4)}
+                        />
+                    )}
                 </Tabs>
+                    
                 {/* Username display*/}
                 <Box sx={{ 
                     mt: 'auto', //Pin it to the bottom, otherwise it will look terrible
@@ -157,6 +162,8 @@ export default function App() {
                     <LoginPage
                         user={user}
                         setUser={setUser}
+                        role={role}
+                        setRole={setRole}
                         onLoginSuccess={() => setTabIndex(1)}/* Redirect to Library Page */
                     />
                 </div>
@@ -184,6 +191,15 @@ export default function App() {
                         setReservationInfo={setReservationInfo}
                     />
                 </div>
+                {role?.role === 'admin' && (
+                    <div hidden= {tabIndex !== 4}>
+                        <ManageReservationsPage
+                        user={user}
+                        setUser={setUser}
+                        role={role}
+                        />
+                    </div>
+                )}
             </Box>
         </Box>
     );
