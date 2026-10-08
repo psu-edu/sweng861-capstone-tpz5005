@@ -19,13 +19,13 @@ def hash_password(password: str) -> str:
 
 
 custom_users = {
-    "student": {
-        "username": "abc1234@psu.edu",
+    "abc1234@psu.edu": {
+        "username": "student",
         "hashed_password": hash_password("PennState1855"),
         "role": "student" 
     },
-    "professor": {
-        "username": "prof456@psu.edu",
+    "prof456@psu.edu": {
+        "username": "professor",
         "hashed_password": hash_password("professor123"),
         "role": "admin" 
     }
@@ -67,3 +67,14 @@ def create_jwt_token(username: str) -> str:
     # Encode it using your secret key
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+# Gets the role of the authenticated user
+#-------------------------------------------------------------------#
+def get_user_role(username: str) -> str | None:
+#-------------------------------------------------------------------#
+    user = custom_users.get(username)
+
+    if user:
+        return user["role"]
+
+    return None
